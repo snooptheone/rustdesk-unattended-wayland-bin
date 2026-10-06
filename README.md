@@ -51,6 +51,10 @@ You want something like `drm: first frame for crtc N in ... (dma-buf path)`. The
 
 CachyOS, Wayland, RustDesk 1.5.0. The service log reports `drm: first frame ... (dma-buf path)` on a real remote connection, with no portal prompt and no PipeWire fallback. Other GPUs and compositors were not tested here; see the upstream pull request for the hardware its author covered.
 
+## License
+
+The packaging files in this repository (`PKGBUILD`, `rustdesk.install`, `.SRCINFO`, this README) are released under the [BSD Zero Clause License](LICENSE). RustDesk itself, and the `.deb` this package installs, remain under their own license (AGPL-3.0); this repository does not relicense them.
+
 ## Credits
 
 This repository is only packaging glue. All the real work belongs to others:
