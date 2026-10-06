@@ -2,4 +2,3 @@ src/
 pkg/
 *.pkg.tar.*
 *.deb
-*.log

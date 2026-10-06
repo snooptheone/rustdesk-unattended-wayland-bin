@@ -25,7 +25,6 @@ pkgbase = rustdesk-unattended-wayland-bin
 	conflicts = rustdesk-bin
 	noextract = rustdesk-unattended-wayland-1.5.0-x86_64.deb
 	options = !strip
-	options = !lto
 	options = !debug
 	source_x86_64 = rustdesk-unattended-wayland-1.5.0-x86_64.deb::https://github.com/rustdesk/rustdesk/releases/download/1.5.0/rustdesk-unattended-wayland-1.5.0-x86_64.deb
 	sha256sums_x86_64 = 9eed5e9f4b47af8ed41585c399cb2c0d2870e801c99645330dea1063ad844e09

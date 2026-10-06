@@ -14,15 +14,15 @@ optdepends=('libayatana-appindicator: tray icon'
             'libappindicator-gtk3: tray icon')
 provides=('rustdesk')
 conflicts=('rustdesk' 'rustdesk-bin')
-options=('!strip' '!lto' '!debug')
+options=('!strip' '!debug')
 install=rustdesk.install
-source_x86_64=("rustdesk-unattended-wayland-${pkgver}-${CARCH}.deb::${url}/releases/download/${pkgver}/rustdesk-unattended-wayland-${pkgver}-${CARCH}.deb")
-noextract=("rustdesk-unattended-wayland-${pkgver}-${CARCH}.deb")
+_deb="rustdesk-unattended-wayland-${pkgver}-${CARCH}.deb"
+source_x86_64=("${_deb}::${url}/releases/download/${pkgver}/${_deb}")
+noextract=("${_deb}")
 sha256sums_x86_64=('9eed5e9f4b47af8ed41585c399cb2c0d2870e801c99645330dea1063ad844e09')
 
 package() {
-  bsdtar -xf "${srcdir}/rustdesk-unattended-wayland-${pkgver}-${CARCH}.deb" -C "${srcdir}" data.tar.xz
-  bsdtar -xf "${srcdir}/data.tar.xz" -C "${pkgdir}"
+  bsdtar -xOf "${srcdir}/${_deb}" data.tar.xz | bsdtar -xf - -C "${pkgdir}"
 
   install -d "${pkgdir}/usr/bin"
   ln -s /usr/share/rustdesk/rustdesk "${pkgdir}/usr/bin/rustdesk"
