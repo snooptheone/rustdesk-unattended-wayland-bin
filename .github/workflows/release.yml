@@ -21,6 +21,7 @@ jobs:
           su builder -c 'makepkg --nodeps -f && diff <(makepkg --printsrcinfo) .SRCINFO && namcap PKGBUILD'
       - name: Release
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           pkg=$(ls -- *.pkg.tar.zst)
           tag=$(sed -n 's/^pkgver=//p' PKGBUILD)-$(sed -n 's/^pkgrel=//p' PKGBUILD)
           gh release view "$tag" >/dev/null 2>&1 && exit 0
