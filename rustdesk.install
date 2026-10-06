@@ -1,0 +1,31 @@
+note() { printf '==> NOTE: %s\n' "$1"; }
+
+post_install() {
+	# enable + restart: also replaces a stale daemon still running the previous package's binary
+	systemctl daemon-reload || true
+	systemctl enable rustdesk.service || true
+	systemctl restart rustdesk.service || true
+	update-desktop-database -q || true
+	note "DRM capture needs the root service and a Wayland session; it falls back to PipeWire otherwise."
+}
+
+pre_upgrade() {
+	systemctl stop rustdesk.service || true
+}
+
+post_upgrade() {
+	systemctl daemon-reload || true
+	systemctl enable rustdesk.service || true
+	systemctl restart rustdesk.service || true
+	update-desktop-database -q || true
+}
+
+pre_remove() {
+	if systemctl -q is-active rustdesk.service; then
+		note "Run 'sudo systemctl stop rustdesk' to make sure remote access is stopped."
+	fi
+}
+
+post_remove() {
+	update-desktop-database -q || true
+}
