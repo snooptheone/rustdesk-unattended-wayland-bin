@@ -14,7 +14,51 @@ The DRM capture backend ([rustdesk/rustdesk#15420](https://github.com/rustdesk/r
 
 Repackages the official deb with a pinned sha256. See [PKGBUILD](PKGBUILD) and [rustdesk.install](rustdesk.install) for exactly what it installs and what happens on install and upgrade.
 
-## Install
+## Install from the pacman repository (updates with `pacman -Syu`)
+
+The package is published in a signed pacman repository, `[rustdesk-drm]`, kept in the [`repo` release](https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/tag/repo) of this repository. Packages and database are signed with a dedicated key:
+
+```
+B433 5AFC 8B78 A3DD 3A17  52F5 1055 D807 33B8 C800
+```
+
+1. Download the key and **check that the fingerprint printed matches the one above** before trusting it:
+
+```bash
+curl -fsSLO https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/download/repo/rustdesk-drm.gpg
+```
+```bash
+gpg --show-keys --fingerprint rustdesk-drm.gpg
+```
+
+2. Trust it in pacman's keyring:
+
+```bash
+sudo pacman-key --add rustdesk-drm.gpg
+```
+```bash
+sudo pacman-key --lsign-key B4335AFC8B78A3DD3A1752F51055D80733B8C800
+```
+
+3. Add the repository at the end of `/etc/pacman.conf`:
+
+```ini
+[rustdesk-drm]
+SigLevel = Required DatabaseRequired
+Server = https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/download/repo
+```
+
+4. Install:
+
+```bash
+sudo pacman -Syu rustdesk-unattended-wayland-bin
+```
+
+pacman will offer to remove `rustdesk` / `rustdesk-bin` if you have them. Installing enables and restarts the `rustdesk` service, so an open remote session drops for a few seconds. Your RustDesk ID, password and settings live in `~/.config/rustdesk` and `/root/.config/rustdesk` and are not touched.
+
+The key expires on 2028-10-05; a new one will be announced here before that. This README is the only place the fingerprint is published, so there is no second channel to cross-check it against yet.
+
+## Install by building it yourself
 
 ```bash
 git clone https://github.com/snooptheone/rustdesk-unattended-wayland-bin.git
@@ -22,9 +66,7 @@ cd rustdesk-unattended-wayland-bin
 makepkg -si
 ```
 
-pacman will offer to remove `rustdesk` / `rustdesk-bin` if you have them. Your RustDesk ID, password and settings live in `~/.config/rustdesk` and `/root/.config/rustdesk` and are not touched.
-
-A prebuilt `.pkg.tar.zst` may also be attached to the Releases page of this repository.
+Or download a `.pkg.tar.zst` from the [Releases](https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases) page and run `sudo pacman -U` on it (those single-version packages are not signed).
 
 ## Check that DRM capture is really used
 
