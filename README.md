@@ -68,6 +68,21 @@ makepkg -si
 
 Or download a `.pkg.tar.zst` from the [Releases](https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases) page and run `sudo pacman -U` on it (those single-version packages are not signed).
 
+## If pacman says `rustdesk-link.desktop exists in filesystem`
+
+```text
+error: failed to commit transaction (conflicting files)
+rustdesk-unattended-wayland-bin: /usr/share/applications/rustdesk-link.desktop exists in filesystem
+```
+
+pacman refuses to overwrite a file that no package owns. The official RustDesk package copies that file in by hand from its install script, so anyone who ever installed it keeps a stray copy, even after switching packages. It only registers the `rustdesk://` link handler, and this package ships its own copy. Let pacman replace just that one path:
+
+```bash
+sudo pacman -Syu --overwrite /usr/share/applications/rustdesk-link.desktop rustdesk-unattended-wayland-bin
+```
+
+With `pacman -U`, add the same `--overwrite` option. Nothing is changed when pacman reports this error, so it is safe to run again.
+
 ## Check that DRM capture is really used
 
 There is no menu option for it: the backend is picked automatically (DRM, then PipeWire, then X11) and only on Wayland. After a remote connection, the root service log shows the capture path:
