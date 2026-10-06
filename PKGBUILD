@@ -10,8 +10,7 @@ url='https://github.com/rustdesk/rustdesk'
 license=('AGPL-3.0-only')
 depends=('gtk3' 'xdotool' 'libxcb' 'libxfixes' 'alsa-lib' 'libva' 'libdrm' 'libglvnd'
          'gst-plugins-base' 'gst-plugin-pipewire' 'curl' 'systemd-libs')
-optdepends=('libayatana-appindicator: tray icon'
-            'libappindicator-gtk3: tray icon')
+optdepends=('libayatana-appindicator: tray icon')
 provides=('rustdesk')
 conflicts=('rustdesk' 'rustdesk-bin')
 options=('!strip' '!debug')

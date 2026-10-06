@@ -12,11 +12,7 @@ The DRM capture backend ([rustdesk/rustdesk#15420](https://github.com/rustdesk/r
 
 ## What the package does
 
-- Downloads the official release `.deb` and checks its **pinned sha256** (it matches the digest GitHub shows for the release asset).
-- Installs the app in `/usr/share/rustdesk` and `libdrmtap.so.0.x.y` in `/usr/lib/rustdesk`, exactly as upstream lays them out.
-- Installs the systemd unit in `/usr/lib/systemd/system` (with `pkill` as an absolute path, as the upstream `postinst` does) and symlinks `/usr/bin/rustdesk`.
-- `provides=rustdesk`, `conflicts=rustdesk rustdesk-bin`.
-- On install and upgrade it enables and restarts the `rustdesk` service, so a stale daemon never keeps running the previous binary.
+Repackages the official deb with a pinned sha256. See [PKGBUILD](PKGBUILD) and [rustdesk.install](rustdesk.install) for exactly what it installs and what happens on install and upgrade.
 
 ## Install
 

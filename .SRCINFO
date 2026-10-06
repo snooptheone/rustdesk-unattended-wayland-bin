@@ -19,7 +19,6 @@ pkgbase = rustdesk-unattended-wayland-bin
 	depends = curl
 	depends = systemd-libs
 	optdepends = libayatana-appindicator: tray icon
-	optdepends = libappindicator-gtk3: tray icon
 	provides = rustdesk
 	conflicts = rustdesk
 	conflicts = rustdesk-bin
