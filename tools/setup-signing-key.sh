@@ -24,11 +24,13 @@ case $(bw status | jq -r .status) in
 esac
 
 echo "== checking nothing would be overwritten"
-if gh secret list --repo "$REPO" | awk '{print $1}' | grep -qxE 'GPG_PRIVATE_KEY|GPG_PASSPHRASE'; then
+secrets=$(gh secret list --repo "$REPO") || die "cannot read the secrets of $REPO, so I cannot tell whether it is safe to continue. This gh login lacks permission (needs the 'repo' scope and admin on the repo). See: gh auth status. Fix: gh auth refresh -h github.com -s repo (a GH_TOKEN env var, if set, overrides gh's own login)"
+if awk '{print $1}' <<<"$secrets" | grep -qxE 'GPG_PRIVATE_KEY|GPG_PASSPHRASE'; then
   die "a GPG secret already exists on $REPO. Replacing it makes a NEW key; delete the old one first (gh secret delete) if that is what you want"
 fi
 for n in "$ITEM_KEY" "$ITEM_REV"; do
-  [ "$(bw list items --search "$n" | jq --arg n "$n" '[.[] | select(.name == $n)] | length')" = 0 ] || die "Bitwarden item '$n' already exists"
+  found=$(bw list items --search "$n" | jq --arg n "$n" '[.[] | select(.name == $n)] | length') || die "could not search Bitwarden for '$n'"
+  [ "$found" = 0 ] || die "Bitwarden item '$n' already exists"
 done
 
 umask 077
@@ -73,9 +75,10 @@ bw get item "$id_key" | jq -j '.fields[] | select(.name == "passphrase") | .valu
 bw get item "$id_rev" | jq -j .notes | cmp - "$w/revoke.asc" || die "Bitwarden revocation note differs; nothing was sent to GitHub"
 
 echo "== setting the GitHub secrets on $REPO"
-gh secret set GPG_PRIVATE_KEY --repo "$REPO" < "$w/key.asc"
-gh secret set GPG_PASSPHRASE --repo "$REPO" < "$w/pass"
-gh secret list --repo "$REPO" | awk '{print "   secret: " $1}'
+kept="The key IS safe in Bitwarden ('$ITEM_KEY'). Fix gh, then set the secrets from those notes."
+gh secret set GPG_PRIVATE_KEY --repo "$REPO" < "$w/key.asc" || die "could not set GPG_PRIVATE_KEY. $kept"
+gh secret set GPG_PASSPHRASE --repo "$REPO" < "$w/pass" || die "could not set GPG_PASSPHRASE. $kept"
+gh secret list --repo "$REPO" | awk '{print "   secret: " $1}' || true
 
 cat <<E
 == done

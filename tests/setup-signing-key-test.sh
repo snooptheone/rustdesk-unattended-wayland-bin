@@ -30,7 +30,7 @@ cat > "$W/bin/gh" <<'E'
 #!/usr/bin/env bash
 case "$1 $2" in
   "auth status") exit 0 ;;
-  "secret list") for f in "$FAKE_GH"/*; do [ -e "$f" ] && echo "$(basename "$f")	Updated"; done; true ;;
+  "secret list") if [ -n "${FAKE_GH_DENY:-}" ]; then echo "failed to get secrets: HTTP 403" >&2; exit 1; fi; for f in "$FAKE_GH"/*; do [ -e "$f" ] && echo "$(basename "$f")	Updated"; done; true ;;
   "secret set")  cat > "$FAKE_GH/$3" ;;
   *) echo "fake gh: unsupported: $*" >&2; exit 2 ;;
 esac
@@ -38,6 +38,12 @@ E
 chmod +x "$W/bin/bw" "$W/bin/gh"; export PATH=$W/bin:$PATH
 
 secret_keys_before=$(gpg --list-secret-keys --with-colons 2>/dev/null | grep -c '^sec' || true)
+
+echo "== gh sem permissão para ler secrets: tem que PARAR antes de gerar qualquer coisa (bug real achado na 1ª execução do dono)"
+out=$(FAKE_GH_DENY=1 bash "$SCRIPT" 2>&1); rc=$?
+[ $rc -ne 0 ] && grep -q 'cannot read the secrets' <<<"$out" && ok "recusou com mensagem clara (rc=$rc)" || { bad "não parou (rc=$rc)"; echo "$out" | tail -3; }
+grep -q 'generating the key' <<<"$out" && bad "gerou a chave mesmo sem poder checar os secrets" || ok "não chegou a gerar a chave"
+[ -z "$(find "$FAKE_BW" "$FAKE_GH" -type f)" ] && ok "nada gravado" || bad "gravou algo"
 
 echo "== --dry-run: gera e prova a chave, mas não grava em lugar nenhum"
 out=$(bash "$SCRIPT" --dry-run 2>&1); rc=$?
