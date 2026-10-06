@@ -6,12 +6,14 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency: pacman-repo
 jobs:
   release:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     env:
       GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
       - run: pacman -Syu --noconfirm git github-cli namcap
       - uses: actions/checkout@v7
@@ -27,3 +29,8 @@ jobs:
           gh release view "$tag" >/dev/null 2>&1 && exit 0
           gh release create "$tag" "$pkg" --target "$GITHUB_SHA" --title "$tag" \
             --notes "Repackaged official RustDesk unattended-wayland deb. Install: \`sudo pacman -U $pkg\`. sha256: \`$(sha256sum "$pkg" | cut -d' ' -f1)\`. Not signed."
+      - name: Pacman repository
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: .github/scripts/repo-update.sh

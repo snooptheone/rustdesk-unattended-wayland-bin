@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Stand-in for `gh release ...` backed by a directory ($FAKE_RELEASES/<tag>/), only what repo-update.sh calls. Used by repo-update-test.sh.
+set -euo pipefail
+R=${FAKE_RELEASES:?}
+[ "$1" = release ] || { echo "fake gh: unsupported: $*" >&2; exit 2; }
+cmd=$2; shift 2
+tag=$1; shift
+case $cmd in
+  view)   [ -d "$R/$tag" ] || exit 1
+          [[ " $* " == *" --json "* ]] && ls -1 "$R/$tag" || true ;;
+  create) mkdir -p "$R/$tag" ;;
+  upload) for a; do if [ -f "$a" ]; then cp "$a" "$R/$tag/"; fi; done ;;
+  delete-asset) rm -f "$R/$tag/$1" ;;
+  download) dest=. pats=()
+            while [ $# -gt 0 ]; do case $1 in -p) pats+=("$2"); shift 2;; -D) dest=$2; shift 2;; *) shift;; esac; done
+            for p in "${pats[@]}"; do
+              # shellcheck disable=SC2086
+              set -- "$R/$tag"/$p; [ -e "$1" ] || { echo "no assets match $p" >&2; exit 1; }; cp "$@" "$dest/"
+            done ;;
+  *) echo "fake gh: unsupported release $cmd" >&2; exit 2 ;;
+esac
