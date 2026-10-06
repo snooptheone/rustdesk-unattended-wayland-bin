@@ -1,0 +1,28 @@
+name: release
+on:
+  push:
+    branches: [main]
+    paths: [PKGBUILD]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: pacman -Syu --noconfirm git github-cli namcap
+      - uses: actions/checkout@v4
+      - name: Build and check
+        run: |
+          useradd -m builder && chown -R builder .
+          su builder -c 'makepkg --nodeps -f && diff <(makepkg --printsrcinfo) .SRCINFO && namcap PKGBUILD'
+      - name: Release
+        run: |
+          pkg=$(ls -- *.pkg.tar.zst)
+          tag=$(sed -n 's/^pkgver=//p' PKGBUILD)-$(sed -n 's/^pkgrel=//p' PKGBUILD)
+          gh release view "$tag" >/dev/null 2>&1 && exit 0
+          gh release create "$tag" "$pkg" --target "$GITHUB_SHA" --title "$tag" \
+            --notes "Repackaged official RustDesk unattended-wayland deb. Install: \`sudo pacman -U $pkg\`. sha256: \`$(sha256sum "$pkg" | cut -d' ' -f1)\`. Not signed."

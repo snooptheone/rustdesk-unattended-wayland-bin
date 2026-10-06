@@ -1,0 +1,27 @@
+name: update
+on:
+  schedule: [{cron: '17 6 * * *'}]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: bump
+        run: echo "ver=$(.github/scripts/bump.sh)" >> "$GITHUB_OUTPUT"
+      - if: steps.bump.outputs.ver != ''
+        env:
+          VER: ${{ steps.bump.outputs.ver }}
+        run: |
+          git ls-remote --exit-code --heads origin "bump-$VER" && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "bump-$VER"
+          git commit -am "Update to $VER"
+          git push -u origin "bump-$VER"
+          gh pr create --title "Update to $VER" --body "RustDesk $VER has a stable release with the unattended-wayland deb. Bumped \`pkgver\` and the pinned sha256 (digest from the release asset). Merging builds the package and creates the release."
