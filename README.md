@@ -26,7 +26,15 @@ So the package sets `enable-drm-display-wake = 'N'` in the root service's config
 sudo rustdesk --option enable-drm-display-wake Y
 ```
 
-An explicit `Y` or `N` is never overwritten by later upgrades. To check the current value: `sudo grep -n enable-drm-display-wake /root/.config/rustdesk/RustDesk2.toml`.
+To go back to the package default (`N`) after changing it:
+
+```bash
+sudo rustdesk --option enable-drm-display-wake N
+```
+
+An explicit `Y` or `N` is never overwritten by later upgrades. To read the current value: `sudo rustdesk --option enable-drm-display-wake` (no value prints it), or `sudo grep -n enable-drm-display-wake /root/.config/rustdesk/RustDesk2.toml`.
+
+Do not just delete the line to "reset" it: with the key absent RustDesk treats the wake as **on** (upstream's default) until the package sets it again. If you did delete it, either run the command above or reinstall (`sudo pacman -S rustdesk-unattended-wayland-bin`), which runs the install script again and restores `N` because the key is absent.
 
 ## Install from the pacman repository (updates with `pacman -Syu`)
 
