@@ -1,11 +1,38 @@
 note() { printf '==> NOTE: %s\n' "$1"; }
 
+# The DRM build wakes a display that the compositor switched off (synthetic uinput input sent by the root
+# service) every time the unprivileged --server starts, which happens every hour. On a setup where KWin
+# turns outputs off on idle that hourly wake can desync the compositor's output configuration (NVIDIA
+# + KWin: "Applying output configuration failed", frozen outputs). Default it to off; the capture then
+# falls back to PipeWire for an output that is off, as upstream documents. Only an absent key is set, so
+# an administrator's explicit choice (`sudo rustdesk --option enable-drm-display-wake Y`) survives upgrades.
+_rustdesk_root_config() { printf '%s' "${RUSTDESK_ROOT_CONFIG:-/root/.config/rustdesk/RustDesk2.toml}"; }
+
+rustdesk_default_options() {
+	local cfg key=enable-drm-display-wake
+	cfg=$(_rustdesk_root_config)
+	mkdir -p "$(dirname "$cfg")" || return 0
+	if [ ! -f "$cfg" ]; then
+		( umask 077; printf "[options]\n%s = 'N'\n" "$key" > "$cfg" )
+	elif grep -Eq "^[[:space:]]*${key}[[:space:]]*=" "$cfg"; then
+		return 0
+	elif grep -Eq '^\[options\][[:space:]]*$' "$cfg"; then
+		sed -i -E "/^\[options\][[:space:]]*\$/a ${key} = 'N'" "$cfg"
+	else
+		printf "\n[options]\n%s = 'N'\n" "$key" >> "$cfg"
+	fi
+}
+
 post_install() {
+	# stop first so the running daemon cannot write its config while we edit it
+	systemctl stop rustdesk.service || true
+	rustdesk_default_options || true
 	# enable + restart: also replaces a stale daemon still running the previous package's binary
 	systemctl enable rustdesk.service || true
 	systemctl restart rustdesk.service || true
 	update-desktop-database -q || true
 	note "DRM capture needs the root service and a Wayland session; it falls back to PipeWire otherwise."
+	note "enable-drm-display-wake defaults to N (see README); re-enable with: sudo rustdesk --option enable-drm-display-wake Y"
 }
 
 pre_upgrade() {

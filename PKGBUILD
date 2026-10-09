@@ -3,7 +3,7 @@
 # for Arch. The upstream CI only ships this build as a .deb; nothing here is Debian specific.
 pkgname=rustdesk-unattended-wayland-bin
 pkgver=1.5.0
-pkgrel=1
+pkgrel=2
 pkgdesc='RustDesk with DRM/KMS direct capture on Wayland (no portal consent prompt), repackaged from the official deb'
 arch=('x86_64')
 url='https://github.com/rustdesk/rustdesk'
