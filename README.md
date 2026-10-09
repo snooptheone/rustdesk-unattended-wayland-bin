@@ -14,6 +14,20 @@ The DRM capture backend ([rustdesk/rustdesk#15420](https://github.com/rustdesk/r
 
 Repackages the official deb with a pinned sha256. See [PKGBUILD](PKGBUILD) and [rustdesk.install](rustdesk.install) for exactly what it installs and what happens on install and upgrade.
 
+## The display wake is off by default
+
+The upstream `drm-wake` feature is compiled into this build and is **on** unless a runtime option turns it off ([rustdesk/rustdesk#15420](https://github.com/rustdesk/rustdesk/pull/15420): the key `enable-drm-display-wake` is read as true when absent). When a connected display has no CRTC, the root service wakes it by injecting synthetic input through a `RustDesk DRM display wake` uinput device, once per `--server` handshake. The root service also restarts the unprivileged `--server` every hour ([rustdesk/rustdesk#14935](https://github.com/rustdesk/rustdesk/pull/14935) proposed removing that and was closed unmerged), so on a machine where the compositor switches outputs off on idle, the screens are woken once an hour with nobody present.
+
+On one NVIDIA + KWin (Wayland) machine with a DisplayPort monitor that drops its link in standby, that hourly wake made the monitor disconnect and reconnect, KWin failed to apply its output configuration and the outputs froze (`Applying output configuration failed!`, NVIDIA Xid 16). With `enable-drm-display-wake = 'N'`, three consecutive `--server` restarts (two forced, one at the natural hour, screens off each time) created no wake device, started no KSplash and left the outputs untouched. That is a small sample from one machine, not a guarantee.
+
+So the package sets `enable-drm-display-wake = 'N'` in the root service's config, `/root/.config/rustdesk/RustDesk2.toml` under `[options]`, on install and upgrade, **only when the key is absent**. Capture of an output that is switched off then falls back to PipeWire, as upstream documents. To turn the wake back on:
+
+```bash
+sudo rustdesk --option enable-drm-display-wake Y
+```
+
+An explicit `Y` or `N` is never overwritten by later upgrades. To check the current value: `sudo grep -n enable-drm-display-wake /root/.config/rustdesk/RustDesk2.toml`.
+
 ## Install from the pacman repository (updates with `pacman -Syu`)
 
 The package is published in a signed pacman repository, `[rustdesk-drm]`, kept in the [`repo` release](https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/tag/repo) of this repository. Packages and database are signed with a dedicated key:
@@ -97,6 +111,7 @@ You want something like `drm: first frame for crtc N in ... (dma-buf path)`. The
 
 - The service runs **as root**. That is how the DRM backend gets the privilege it needs to read another client's scanout. Upstream documents the threat model in `docs/DRM_CAPTURE_SECURITY.md` in the RustDesk repository; read it before deciding whether this fits your machine.
 - It needs an active CRTC. If the compositor has switched the output off, there is nothing to capture and RustDesk falls back to PipeWire.
+- Because the display wake is off by default (see above), an output the compositor has switched off is not woken for a remote connection; the connection falls back to PipeWire instead.
 - X11 sessions are unaffected: the DRM path is skipped.
 - Pinned to the official `1.5.0` release. To follow a new release, bump `pkgver` and the sha256 in the `PKGBUILD`, and make sure the matching `rustdesk-unattended-wayland-*.deb` exists on that release first.
 

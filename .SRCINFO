@@ -1,7 +1,7 @@
 pkgbase = rustdesk-unattended-wayland-bin
 	pkgdesc = RustDesk with DRM/KMS direct capture on Wayland (no portal consent prompt), repackaged from the official deb
 	pkgver = 1.5.0
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/rustdesk/rustdesk
 	install = rustdesk.install
 	arch = x86_64
