@@ -41,4 +41,19 @@ reset; mkdir -p "$(dirname "$RUSTDESK_ROOT_CONFIG")"
 printf "[options]   \nfoo = 'bar'\n" > "$RUSTDESK_ROOT_CONFIG"; rustdesk_default_options
 [ "$(val)" = N ] && ok "[options] with trailing spaces: matched" || bad "[options] with trailing spaces: matched"
 
+# End to end: what pacman runs on an upgrade (post_upgrade -> post_install) with stubbed system commands.
+# The key must be written after the daemon is stopped and before it is started again.
+LOG=$W/calls.log
+systemctl() { printf 'systemctl %s | key-present=%s\n' "$*" "$([ -f "$RUSTDESK_ROOT_CONFIG" ] && grep -c "^$KEY" "$RUSTDESK_ROOT_CONFIG" || echo 0)" >> "$LOG"; }
+update-desktop-database() { :; }
+note() { :; }
+reset; : > "$LOG"; mkdir -p "$(dirname "$RUSTDESK_ROOT_CONFIG")"
+printf "id = 'abc'\n[options]\nfoo = 'bar'\n" > "$RUSTDESK_ROOT_CONFIG"     # an existing install, key absent
+post_upgrade
+[ "$(val)" = N ] && ok "upgrade, key absent: post_upgrade sets it to N" || bad "upgrade, key absent: post_upgrade sets it to N"
+grep -q "stop rustdesk.service | key-present=0" "$LOG" && grep -q "restart rustdesk.service | key-present=1" "$LOG" \
+  && ok "upgrade: key written after stop, before restart" || bad "upgrade: key written after stop, before restart"
+reset; mkdir -p "$(dirname "$RUSTDESK_ROOT_CONFIG")"; printf "[options]\n%s = 'Y'\n" "$KEY" > "$RUSTDESK_ROOT_CONFIG"; post_upgrade
+[ "$(val)" = Y ] && ok "upgrade, key already Y: kept" || bad "upgrade, key already Y: kept"
+
 [ "$FAILS" = 0 ] && echo "all passed" || { echo "$FAILS failed"; exit 1; }
