@@ -8,31 +8,44 @@ note() { printf '==> NOTE: %s\n' "$1"; }
 # an administrator's explicit choice (`sudo rustdesk --option enable-drm-display-wake Y`) survives upgrades.
 _rustdesk_root_config() { printf '%s' "${RUSTDESK_ROOT_CONFIG:-/root/.config/rustdesk/RustDesk2.toml}"; }
 
+# Returns 0 when it set the key, 10 when the key was already present in [options] (left alone), 1 on error.
 rustdesk_default_options() {
-	local cfg key=enable-drm-display-wake
+	local cfg key=enable-drm-display-wake hdr='^[[:space:]]*\[options\][[:space:]]*$' backup
 	cfg=$(_rustdesk_root_config)
-	mkdir -p "$(dirname "$cfg")" || return 0
+	mkdir -p "$(dirname "$cfg")" || return 1
 	if [ ! -f "$cfg" ]; then
-		( umask 077; printf "[options]\n%s = 'N'\n" "$key" > "$cfg" )
-	elif grep -Eq "^[[:space:]]*${key}[[:space:]]*=" "$cfg"; then
+		( umask 077; printf "[options]\n%s = 'N'\n" "$key" > "$cfg" ) || return 1
 		return 0
-	elif grep -Eq '^\[options\][[:space:]]*$' "$cfg"; then
-		sed -i -E "/^\[options\][[:space:]]*\$/a ${key} = 'N'" "$cfg"
-	else
-		printf "\n[options]\n%s = 'N'\n" "$key" >> "$cfg"
 	fi
+	# the [options] table only: from its header up to the next table header (or the end of the file)
+	if sed -n "/$hdr/,/^[[:space:]]*\[.*\][[:space:]]*\$/p" "$cfg" | grep -Eq "^[[:space:]]*${key}[[:space:]]*="; then
+		return 10
+	fi
+	backup="$cfg.bak.$(date +%Y%m%d%H%M%S)"
+	cp -a "$cfg" "$backup" || return 1
+	if grep -Eq "$hdr" "$cfg"; then
+		sed -i -E "/$hdr/a ${key} = 'N'" "$cfg" || return 1
+	else
+		printf "\n[options]\n%s = 'N'\n" "$key" >> "$cfg" || return 1
+	fi
+	return 0
 }
 
 post_install() {
+	local rc=0
 	# stop first so the running daemon cannot write its config while we edit it
 	systemctl stop rustdesk.service || true
-	rustdesk_default_options || true
+	rustdesk_default_options || rc=$?
 	# enable + restart: also replaces a stale daemon still running the previous package's binary
 	systemctl enable rustdesk.service || true
 	systemctl restart rustdesk.service || true
 	update-desktop-database -q || true
 	note "DRM capture needs the root service and a Wayland session; it falls back to PipeWire otherwise."
-	note "enable-drm-display-wake defaults to N (see README); re-enable with: sudo rustdesk --option enable-drm-display-wake Y"
+	case $rc in
+		0)  note "enable-drm-display-wake was not set: it is now N (see README). Turn it back on with: sudo rustdesk --option enable-drm-display-wake Y" ;;
+		10) ;;
+		*)  note "could not set enable-drm-display-wake = 'N' in $(_rustdesk_root_config); set it with: sudo rustdesk --option enable-drm-display-wake N" ;;
+	esac
 }
 
 pre_upgrade() {

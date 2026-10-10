@@ -1,0 +1,15 @@
+name: test
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [rustdesk.install, tests/options-default-test.sh, .github/workflows/test.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  options-default:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash tests/options-default-test.sh
