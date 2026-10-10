@@ -33,7 +33,9 @@ Two states are worth telling apart:
 
 Deleting the line also gives the original behaviour (delete it, then `sudo systemctl restart rustdesk`), but only until the next install or upgrade: the install script sets `N` whenever the key is absent, so the line comes back. Use `Y` if you want the original behaviour to stay.
 
-To read the current value: `sudo rustdesk --option enable-drm-display-wake` (no value prints it), or `sudo grep -n enable-drm-display-wake /root/.config/rustdesk/RustDesk2.toml`.
+To read the current value: `sudo rustdesk --option enable-drm-display-wake` prints `N` or `Y`, and an **empty line when the key is absent** (the wake is then on). Like setting it, reading goes through the running root service, so the service has to be running (`sudo systemctl start rustdesk`); without root it prints "Installation and administrative privileges required!". You can also read the file directly: `sudo grep -n enable-drm-display-wake /root/.config/rustdesk/RustDesk2.toml`.
+
+When the install script changes an existing `RustDesk2.toml` it first copies it to `RustDesk2.toml.bak.<timestamp>` next to it. It never touches a file that already has the key under `[options]`.
 
 ## Install from the pacman repository (updates with `pacman -Syu`)
 
