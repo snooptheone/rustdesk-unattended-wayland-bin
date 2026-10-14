@@ -39,45 +39,24 @@ When the install script changes an existing `RustDesk2.toml` it first copies it 
 
 ## Install from the pacman repository (updates with `pacman -Syu`)
 
-The package is published in a signed pacman repository, `[rustdesk-drm]`, kept in the [`repo` release](https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/tag/repo) of this repository. Packages and database are signed with a dedicated key:
+The package is published in a signed pacman repository, kept in the [`repo` release](https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/tag/repo) of this repository and signed with a dedicated key. The key's fingerprint is
 
-```
-B433 5AFC 8B78 A3DD 3A17  52F5 1055 D807 33B8 C800
-```
+`B433 5AFC 8B78 A3DD 3A17  52F5 1055 D807 33B8 C800`
 
-1. Download the key and **check that the fingerprint printed matches the one above** before trusting it:
+(it expires on 2028-10-05). Copy and paste this one block: it downloads the key, **stops if its fingerprint is not the one above**, trusts it, adds the repository to `/etc/pacman.conf` (once) and installs the package.
 
 ```bash
-curl -fsSLO https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/download/repo/rustdesk-drm.gpg
-```
-```bash
-gpg --show-keys --fingerprint rustdesk-drm.gpg
-```
-
-2. Trust it in pacman's keyring:
-
-```bash
-sudo pacman-key --add rustdesk-drm.gpg
-```
-```bash
-sudo pacman-key --lsign-key B4335AFC8B78A3DD3A1752F51055D80733B8C800
+FPR=B4335AFC8B78A3DD3A1752F51055D80733B8C800 && cd "$(mktemp -d)" &&
+curl -fsSLO https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/download/repo/rustdesk-drm.gpg &&
+[ "$(gpg --show-keys --with-colons rustdesk-drm.gpg | awk -F: '/^fpr/{print $10; exit}')" = "$FPR" ] &&
+sudo pacman-key --add rustdesk-drm.gpg && sudo pacman-key --lsign-key "$FPR" &&
+{ grep -q '^\[rustdesk-drm\]' /etc/pacman.conf || printf '\n[rustdesk-drm]\nSigLevel = Required DatabaseRequired\nServer = https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/download/repo\n' | sudo tee -a /etc/pacman.conf >/dev/null; } &&
+sudo pacman -Sy rustdesk-unattended-wayland-bin
 ```
 
-3. Add the repository at the end of `/etc/pacman.conf`:
+If your system is out of date, run `sudo pacman -Syu` first, because Arch does not support installing from refreshed databases on an outdated system.
 
-```ini
-[rustdesk-drm]
-SigLevel = Required DatabaseRequired
-Server = https://github.com/snooptheone/rustdesk-unattended-wayland-bin/releases/download/repo
-```
-
-4. Install:
-
-```bash
-sudo pacman -Syu rustdesk-unattended-wayland-bin
-```
-
-pacman will offer to remove `rustdesk` / `rustdesk-bin` if you have them. Installing enables and restarts the `rustdesk` service, so an open remote session drops for a few seconds. Your RustDesk ID, password and settings live in `~/.config/rustdesk` and `/root/.config/rustdesk` and are not touched.
+pacman will offer to remove `rustdesk` / `rustdesk-bin` if you have them. If it stops with `rustdesk-link.desktop exists in filesystem`, see [that fix](#if-pacman-says-rustdesk-linkdesktop-exists-in-filesystem). Installing enables and restarts the `rustdesk` service, so an open remote session drops for a few seconds. Your RustDesk ID, password and settings live in `~/.config/rustdesk` and `/root/.config/rustdesk` and are not touched.
 
 The key expires on 2028-10-05; a new one will be announced here before that. This README is the only place the fingerprint is published, so there is no second channel to cross-check it against yet.
 
@@ -101,7 +80,7 @@ rustdesk-unattended-wayland-bin: /usr/share/applications/rustdesk-link.desktop e
 pacman refuses to overwrite a file that no package owns. The official RustDesk package copies that file in by hand from its install script, so anyone who ever installed it keeps a stray copy, even after switching packages. It only registers the `rustdesk://` link handler, and this package ships its own copy. Let pacman replace just that one path:
 
 ```bash
-sudo pacman -Syu --overwrite /usr/share/applications/rustdesk-link.desktop rustdesk-unattended-wayland-bin
+sudo pacman -Sy --overwrite /usr/share/applications/rustdesk-link.desktop rustdesk-unattended-wayland-bin
 ```
 
 With `pacman -U`, add the same `--overwrite` option. Nothing is changed when pacman reports this error, so it is safe to run again.
