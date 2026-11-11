@@ -1,7 +1,7 @@
 pkgbase = rustdesk-unattended-wayland-bin
 	pkgdesc = RustDesk with DRM/KMS direct capture on Wayland (no portal consent prompt), repackaged from the official deb
-	pkgver = 1.5.0
-	pkgrel = 2
+	pkgver = 1.5.3
+	pkgrel = 1
 	url = https://github.com/rustdesk/rustdesk
 	install = rustdesk.install
 	arch = x86_64
@@ -22,10 +22,10 @@ pkgbase = rustdesk-unattended-wayland-bin
 	provides = rustdesk
 	conflicts = rustdesk
 	conflicts = rustdesk-bin
-	noextract = rustdesk-unattended-wayland-1.5.0-x86_64.deb
+	noextract = rustdesk-unattended-wayland-1.5.3-x86_64.deb
 	options = !strip
 	options = !debug
-	source_x86_64 = rustdesk-unattended-wayland-1.5.0-x86_64.deb::https://github.com/rustdesk/rustdesk/releases/download/1.5.0/rustdesk-unattended-wayland-1.5.0-x86_64.deb
-	sha256sums_x86_64 = 9eed5e9f4b47af8ed41585c399cb2c0d2870e801c99645330dea1063ad844e09
+	source_x86_64 = rustdesk-unattended-wayland-1.5.3-x86_64.deb::https://github.com/rustdesk/rustdesk/releases/download/1.5.3/rustdesk-unattended-wayland-1.5.3-x86_64.deb
+	sha256sums_x86_64 = 708f390c46c357b72255ed6a1560da644c8381c51dd9b108cbf2a3ceca733e0d
 
 pkgname = rustdesk-unattended-wayland-bin
